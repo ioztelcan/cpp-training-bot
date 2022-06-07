@@ -1,0 +1,3 @@
+[submodule "telegram_bot"]
+	path = telegram_bot
+	url = git@github.com:ioztelcan/telegram_bot.git
