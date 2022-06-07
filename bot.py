@@ -5,6 +5,7 @@ import time
 import logging
 import glob
 import random
+import schedule
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s (%(name)s)', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,9 +17,16 @@ class CppTrainingBot(tb.TelegramBot):
         self.active = False
         self.study_cards =  []
         self.study_cards_dir = os.getenv('STUDY_CARDS_DIR')
+
+        self.help_text = "**C++ Training Bot** \nSends study cards about C++ periodically to help with training.\nUse `/switch on` command to enable the bot. For more commands check the command menu."
+
         self.refresh_study_cards_()
         self.add_command("change", self.cmd_change_directory)
         self.add_command("switch", self.cmd_switch)
+        self.add_command("help", self.cmd_help)
+        self.add_command("random", self.cmd_get_random_card)
+
+        self.send_msg(self.help_text)
 
     # Private Functions
     def send_document_(self, file_path, dst=None):
@@ -28,6 +36,7 @@ class CppTrainingBot(tb.TelegramBot):
             self.bot.send_document(dst, fp)
 
     def refresh_study_cards_(self):
+        logger.info("Study card list refreshed.")
         self.study_cards = glob.glob(self.study_cards_dir + '/*.*')
 
     def change_study_cards_directory_(self, new_path):
@@ -37,15 +46,21 @@ class CppTrainingBot(tb.TelegramBot):
     def send_random_card(self):
         if not self.active:
             return
-        chosen = random.choice(self.study_cards)
-        #self.send_document_(chosen)
-        self.send_msg("Instead of a random study card, here is a placeholder text.")
-        self.study_cards.remove(chosen)
         if len(self.study_cards) == 0:
             self.refresh_study_cards_()
+            if len(self.study_cards) == 0:
+                self.send_msg("Instead of a random study card, here is a placeholder text.")
+                return
+        chosen = random.choice(self.study_cards)
+        self.send_document_(chosen)
+        self.study_cards.remove(chosen)
 
     # Bot commands available to user
     #TODO add @tb.restricted decorator, it needs restricted wrap to become a part of original bot and take self as first argument.
+    def cmd_help(self, update, context):
+        """ Prints the help text """
+        self.send_msg(self.help_text)
+
     def cmd_change_directory(self, update, context):
         """ Take first argument as the new study card directory """
         self.change_study_cards_directory_(context.args[0])
@@ -55,41 +70,31 @@ class CppTrainingBot(tb.TelegramBot):
         if (context.args[0] == 'on'):
             self.active = True
             logger.warning("Training switched ON by the user.")
-            update.message.reply_text("Training switched ON.")
+            self.send_msg("Training switched ON.")
         elif (context.args[0] == 'off'):
             self.active = False
             logger.warning("Training switched OFF by the user.")
-            update.message.reply_text("Training switched OFF.")
+            self.send_msg("Training switched OFF.")
 
-# Bot commands
-@tb.restricted
-def help(update, context):
-    """Send a message when the command /help is issued."""
-    update.message.reply_text('Help message comes here')
-
-@tb.restricted
-def ping(update, context):
-    """Send a pong back."""
-    update.message.reply_text('pong')
+    def cmd_get_random_card(self, update, context):
+        """ Ask for a random study card, it will be removed from the rotation until refresh."""
+        if not self.active:
+            self.send_msg("Switch training ON first.")
+            return
+        self.send_random_card()
 
 def run():
     user_id = os.getenv('TELEGRAM_USER_ID')
     bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
-
-
     bot = CppTrainingBot(user_id, bot_token)
-
-    bot.add_command("help", help)
-    bot.add_command("ping", ping)
-
-    logger.info("Starting cpp-training-bot")
     bot.start()
+
+    schedule.every().day.at("12:30").do(bot.send_random_card)
+    schedule.every().day.at("19:00").do(bot.send_random_card)
+
     while True:
-        bot.send_random_card()
-        time.sleep(10)
-    #bot.send_msg("C++ training bot online!")
-
-
+        schedule.run_pending()
+        time.sleep(1)
 
 if __name__ == "__main__":
     run()
