@@ -21,8 +21,9 @@ class CppTrainingBot(tb.TelegramBot):
         self.data_dir = os.getenv('DATA_DIR')
         self.source = 1 # 0: pull from directory, 1: pull links from a file 2: get from notion directly
         self.source_dir = "{}/links".format(os.getenv('DATA_DIR'))
+        self.scheduler = schedule.Scheduler()
 
-        self.help_text = "*C\+\+ Training Bot* \nSends study cards about C\+\+ periodically to help with training\.\nUse \"/switch on\" command to enable the bot\. Available commands: `dir,switch,help,random,status,refresh,source`\."
+        self.help_text = "*C\+\+ Training Bot* \nSends study cards about C\+\+ periodically to help with training\.\nUse \"/switch on\" command to enable the bot\. Available commands: `dir,switch,help,random,status,refresh,source,jobs,schedule,delete,deleteall`\."
 
         self.refresh_study_cards_()
         self.add_command("dir", self.cmd_set_source_dir)
@@ -70,7 +71,6 @@ class CppTrainingBot(tb.TelegramBot):
                     if not line.startswith('#'):
                         self.study_cards.append(line.strip('\n'))
         logger.info("Study card list refreshed.")
-        print(self.study_cards)
 
     def check_source_(self):
         return self.source
@@ -100,16 +100,16 @@ class CppTrainingBot(tb.TelegramBot):
 
     def schedule_job(self, time):
         """ Simple function to schedule a send card job at a certain time during day. """
-        schedule.every().day.at(time).do(self.send_random_card)
+        self.scheduler.every().day.at(time).do(self.send_random_card)
 
     def delete_job(self, job):
-        schedule.cancel_job(job)
+        self.scheduler.cancel_job(job)
 
     def delete_all_jobs(self):
-        schedule.clear()
+        self.scheduler.clear()
 
     def get_scheduled_jobs(self):
-        return schedule.get_jobs()
+        return self.scheduler.get_jobs()
 
 
     # Bot commands available to user
@@ -203,7 +203,7 @@ def run():
     bot.schedule_job("19:00")
 
     while True:
-        schedule.run_pending()
+        bot.scheduler.run_pending()
         time.sleep(1)
 
 if __name__ == "__main__":
