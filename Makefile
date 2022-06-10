@@ -6,7 +6,6 @@ MOUNT_DIR_LOCAL="$(WORK_DIR)/test_mnt"
 MOUNT_DIR_CONTAINER="/data"
 PROJECT_NAME="cpp-training-bot"
 IMAGE_FILE="$(PROJECT_NAME).tar"
-#	--build-arg DATA_DIR=$(DATA_DIR) \
 
 build:
 	@docker build \

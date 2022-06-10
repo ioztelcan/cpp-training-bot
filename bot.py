@@ -37,7 +37,7 @@ class CppTrainingBot(tb.TelegramBot):
         self.add_command("deleteall", self.cmd_delete_all_jobs)
         self.add_command("schedule", self.cmd_schedule_job)
 
-        #self.send_msg(self.help_text, parse_mode="MarkdownV2")
+        self.send_msg(self.help_text, parse_mode="MarkdownV2")
 
     # Private Functions
     def set_source_dir_(self, new_dir):
@@ -67,8 +67,10 @@ class CppTrainingBot(tb.TelegramBot):
         elif self.source == 1:
             with open (self.source_dir, "r") as link_file:
                 for line in link_file:
-                    self.study_cards.append(line.strip('\n'))
+                    if not line.startswith('#'):
+                        self.study_cards.append(line.strip('\n'))
         logger.info("Study card list refreshed.")
+        print(self.study_cards)
 
     def check_source_(self):
         return self.source
