@@ -1,4 +1,4 @@
-TELEGRAM_USER_ID=<your_user_id>
-TELEGRAM_BOT_TOKEN=<your_bot_token>
-STUDY_CARDS_DIR=/data
-TZ=Europe/Amsterdam
+export TELEGRAM_USER_ID=<your_user_id>
+export TELEGRAM_BOT_TOKEN=<your_bot_token>
+export DATA_DIR=<your_local_data_dir_to_mount>
+export TZ=Europe/Amsterdam
